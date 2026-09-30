@@ -122,6 +122,12 @@ async function rotear(req, res) {
     return enviarJson(res, 200, pedidos);
   }
 
+  const matchPedido = url.pathname.match(/^\/api\/pedidos\/(\d+)$/);
+  if (req.method === 'GET' && matchPedido) {
+    const pedido = pedidos.find((p) => p.id === Number(matchPedido[1]));
+    return pedido ? enviarJson(res, 200, pedido) : enviarJson(res, 404, { erro: 'pedido não encontrado' });
+  }
+
   return enviarJson(res, 404, { erro: 'rota não encontrada' });
 }
 

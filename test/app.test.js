@@ -87,4 +87,9 @@ describe('API HTTP', () => {
     assert.equal(r.status, 200);
     assert.ok(Array.isArray(await r.json()));
   });
+
+  test('GET /api/pedidos/:id inexistente responde 404', async () => {
+    const r = await fetch(`${base}/api/pedidos/99999`);
+    assert.equal(r.status, 404);
+  });
 });
