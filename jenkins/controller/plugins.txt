@@ -1,0 +1,18 @@
+# Plugins do controller Jenkins da Carparts (instalados no build da imagem
+# com jenkins-plugin-cli). Para fixar versões: nome:versao (ex.: git:5.7.0).
+configuration-as-code
+job-dsl
+workflow-aggregator
+pipeline-graph-view
+pipeline-stage-view
+git
+github
+github-branch-source
+docker-workflow
+credentials-binding
+matrix-auth
+junit
+timestamper
+ws-cleanup
+lockable-resources
+mailer

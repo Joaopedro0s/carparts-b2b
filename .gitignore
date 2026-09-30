@@ -1,0 +1,17 @@
+# dependências e saídas de build
+node_modules/
+reports/
+.npm/
+
+# SEGREDOS: nunca versionar (critério eliminatório)
+.env
+*.env
+!*.env.example
+jenkins/controller/secrets/*
+!jenkins/controller/secrets/README.md
+*.pem
+*.key
+sp-credenciais*.json
+
+# métricas exportadas localmente
+metrics/saida/

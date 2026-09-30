@@ -1,0 +1,21 @@
+{
+  "name": "carparts-api",
+  "version": "1.0.0",
+  "description": "API do portal de pedidos B2B da Carparts",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "lint": "eslint .",
+    "pretest": "node -e \"require('node:fs').mkdirSync('reports',{recursive:true})\"",
+    "test": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit.xml \"test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0"
+  }
+}

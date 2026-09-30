@@ -1,0 +1,192 @@
+# Jenkins Configuration as Code (JCasC) · controller da Carparts
+#
+# Segredos NÃO ficam aqui: cada ${VARIAVEL} é resolvida na subida a partir de
+# /run/secrets/VARIAVEL (Docker secrets definidos no docker-compose.yml).
+# Os arquivos de segredo ficam em ./secrets e são ignorados pelo Git.
+
+jenkins:
+  systemMessage: "Jenkins Carparts · configurado por código (JCasC) · builds somente em agents"
+  numExecutors: 0                      # nó interno (built-in) sem executores: nada roda no controller
+  mode: EXCLUSIVE
+  labelString: "controller-nao-usar"
+  disableRememberMe: true
+  markupFormatter: "plainText"
+  slaveAgentPort: 50000                # agents inbound (TCP); exposta só na rede interna
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+
+  securityRealm:
+    local:
+      allowsSignup: false              # ninguém cria conta sozinho
+      users:
+        - id: "admin"
+          name: "Administrador do Jenkins"
+          password: "${ADMIN_PASSWORD}"
+        - id: "aprovador1"
+          name: "Líder técnico (aprovador de produção)"
+          password: "${APROVADOR1_PASSWORD}"
+        - id: "aprovador2"
+          name: "Gerente do portal B2B (aprovador de produção)"
+          password: "${APROVADOR2_PASSWORD}"
+        - id: "dev01"
+          name: "Desenvolvedor 01"
+          password: "${DEV01_PASSWORD}"
+        - id: "dev02"
+          name: "Desenvolvedor 02"
+          password: "${DEV02_PASSWORD}"
+        - id: "dev03"
+          name: "Desenvolvedor 03"
+          password: "${DEV03_PASSWORD}"
+        - id: "dev04"
+          name: "Desenvolvedor 04"
+          password: "${DEV04_PASSWORD}"
+        - id: "designer01"
+          name: "Designer"
+          password: "${DESIGNER01_PASSWORD}"
+
+  # Autorização por matriz: anônimo não tem NENHUMA permissão.
+  authorizationStrategy:
+    globalMatrix:
+      entries:
+        - user:
+            name: "admin"
+            permissions:
+              - "Overall/Administer"
+        - group:
+            name: "authenticated"
+            permissions:
+              - "Overall/Read"
+              - "Job/Read"
+              - "Job/Build"
+              - "Job/Cancel"
+              - "Job/Workspace"
+              - "Run/Update"
+              - "View/Read"
+
+  # Agents permanentes (processo agent.jar iniciado em cada máquina).
+  nodes:
+    - permanent:
+        name: "ubuntu-agent-01"
+        nodeDescription: "Ubuntu 24.04 · Docker Engine · Azure CLI · máquina ubuntu-02"
+        labelString: "linux docker azure-cli"
+        numExecutors: 2
+        mode: NORMAL
+        remoteFS: "/home/jenkins/agent"
+        launcher:
+          inbound:
+            workDirSettings:
+              disabled: false
+              failIfWorkDirIsMissing: false
+              internalDir: "remoting"
+        retentionStrategy: "always"
+    - permanent:
+        name: "wsl-agent-01"
+        nodeDescription: "Windows 11 + WSL 2 (Ubuntu 24.04) · Docker · estação win-01"
+        labelString: "linux docker wsl"
+        numExecutors: 1
+        mode: NORMAL
+        remoteFS: "/home/jenkins/agent"
+        launcher:
+          inbound:
+            webSocket: true            # conecta pelo HTTPS (443) do proxy, sem abrir a 50000
+            workDirSettings:
+              disabled: false
+              failIfWorkDirIsMissing: false
+              internalDir: "remoting"
+        retentionStrategy: "always"
+    - permanent:
+        name: "wsl-agent-02"
+        nodeDescription: "Windows 11 + WSL 2 (Ubuntu 24.04) · Docker · estação win-02"
+        labelString: "linux docker wsl"
+        numExecutors: 1
+        mode: NORMAL
+        remoteFS: "/home/jenkins/agent"
+        launcher:
+          inbound:
+            webSocket: true
+            workDirSettings:
+              disabled: false
+              failIfWorkDirIsMissing: false
+              internalDir: "remoting"
+        retentionStrategy: "always"
+
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+
+# Credenciais usadas pelos pipelines (valores vêm de /run/secrets).
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "azure-sp"
+              description: "Service principal sp-jenkins-carparts (AcrPush no ACR; Contributor em rg-carparts-hml/prd)"
+              username: "${AZURE_CLIENT_ID}"
+              password: "${AZURE_CLIENT_SECRET}"
+          - string:
+              scope: GLOBAL
+              id: "azure-tenant-id"
+              description: "Tenant do Microsoft Entra ID"
+              secret: "${AZURE_TENANT_ID}"
+          - string:
+              scope: GLOBAL
+              id: "azure-subscription-id"
+              description: "Assinatura Azure da Carparts"
+              secret: "${AZURE_SUBSCRIPTION_ID}"
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-token"
+              description: "Token fine-grained do GitHub (leitura do repositório + commit statuses)"
+              username: "${GITHUB_USER}"
+              password: "${GITHUB_TOKEN}"
+          - string:
+              scope: GLOBAL
+              id: "github-webhook-secret"
+              description: "Segredo HMAC do webhook do GitHub"
+              secret: "${GITHUB_WEBHOOK_SECRET}"
+
+unclassified:
+  location:
+    url: "${JENKINS_URL}"
+    adminAddress: "devops@carparts.example"
+  gitHubPluginConfig:
+    hookSecretConfigs:
+      - credentialsId: "github-webhook-secret"
+
+# Job versionado: Multibranch Pipeline do repositório carparts-b2b (plugin job-dsl).
+jobs:
+  - script: >
+      multibranchPipelineJob('carparts-api') {
+        displayName('Carparts · API do portal B2B')
+        description('Pipeline por branch e por pull request. Criado pelo JCasC.')
+        branchSources {
+          branchSource {
+            source {
+              github {
+                id('carparts-b2b-github')
+                repoOwner('${GITHUB_OWNER}')
+                repository('carparts-b2b')
+                repositoryUrl('https://github.com/${GITHUB_OWNER}/carparts-b2b')
+                configuredByUrl(true)
+                credentialsId('github-token')
+                traits {
+                  gitHubBranchDiscovery { strategyId(1) }
+                  gitHubPullRequestDiscovery { strategyId(1) }
+                  gitHubForkDiscovery {
+                    strategyId(1)
+                    trust { gitHubTrustPermissions() }
+                  }
+                }
+              }
+            }
+          }
+        }
+        factory { workflowBranchProjectFactory { scriptPath('Jenkinsfile') } }
+        orphanedItemStrategy { discardOldItems { numToKeep(10) } }
+        triggers { periodicFolderTrigger { interval('1d') } }
+      }

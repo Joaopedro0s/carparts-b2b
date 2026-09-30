@@ -1,0 +1,69 @@
+# Controller Jenkins da Carparts (máquina ubuntu-01, on-premises).
+# Subir:   docker compose up -d --build
+# Logs:    docker compose logs -f jenkins
+#
+# Exposição de rede:
+#   8080  -> SOMENTE 127.0.0.1 (acesso pelo Nginx em HTTPS; nunca aberta para a internet)
+#   443   -> Nginx com TLS, apenas rede interna da Carparts (+ /github-webhook/ para IPs do GitHub)
+#   50000 -> agents inbound TCP, apenas na interface da rede interna (LAN_IP)
+
+services:
+  jenkins:
+    build: .
+    image: carparts/jenkins-controller:2.568.3-1
+    container_name: jenkins-carparts
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "${LAN_IP:?defina LAN_IP no .env}:50000:50000"
+    environment:
+      JENKINS_URL: "${JENKINS_URL:?defina JENKINS_URL no .env}"
+      GITHUB_OWNER: "${GITHUB_OWNER:?defina GITHUB_OWNER no .env}"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    secrets:
+      - ADMIN_PASSWORD
+      - APROVADOR1_PASSWORD
+      - APROVADOR2_PASSWORD
+      - DEV01_PASSWORD
+      - DEV02_PASSWORD
+      - DEV03_PASSWORD
+      - DEV04_PASSWORD
+      - DESIGNER01_PASSWORD
+      - AZURE_CLIENT_ID
+      - AZURE_CLIENT_SECRET
+      - AZURE_TENANT_ID
+      - AZURE_SUBSCRIPTION_ID
+      - GITHUB_USER
+      - GITHUB_TOKEN
+      - GITHUB_WEBHOOK_SECRET
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: jenkins-proxy
+    restart: unless-stopped
+    depends_on: [jenkins]
+    network_mode: host                 # alcança 127.0.0.1:8080 do host
+    volumes:
+      - ./nginx/jenkins.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+
+volumes:
+  jenkins_home:
+
+secrets:
+  ADMIN_PASSWORD:        { file: ./secrets/ADMIN_PASSWORD }
+  APROVADOR1_PASSWORD:   { file: ./secrets/APROVADOR1_PASSWORD }
+  APROVADOR2_PASSWORD:   { file: ./secrets/APROVADOR2_PASSWORD }
+  DEV01_PASSWORD:        { file: ./secrets/DEV01_PASSWORD }
+  DEV02_PASSWORD:        { file: ./secrets/DEV02_PASSWORD }
+  DEV03_PASSWORD:        { file: ./secrets/DEV03_PASSWORD }
+  DEV04_PASSWORD:        { file: ./secrets/DEV04_PASSWORD }
+  DESIGNER01_PASSWORD:   { file: ./secrets/DESIGNER01_PASSWORD }
+  AZURE_CLIENT_ID:       { file: ./secrets/AZURE_CLIENT_ID }
+  AZURE_CLIENT_SECRET:   { file: ./secrets/AZURE_CLIENT_SECRET }
+  AZURE_TENANT_ID:       { file: ./secrets/AZURE_TENANT_ID }
+  AZURE_SUBSCRIPTION_ID: { file: ./secrets/AZURE_SUBSCRIPTION_ID }
+  GITHUB_USER:           { file: ./secrets/GITHUB_USER }
+  GITHUB_TOKEN:          { file: ./secrets/GITHUB_TOKEN }
+  GITHUB_WEBHOOK_SECRET: { file: ./secrets/GITHUB_WEBHOOK_SECRET }
