@@ -1,0 +1,8 @@
+# Override do laboratório (Codespaces): o DNS embutido do Docker não funciona em Docker-in-Docker,
+# então o controller usa a rede do host, mas continua escutando só em 127.0.0.1.
+services:
+  jenkins:
+    network_mode: host
+    ports: !reset []
+    environment:
+      JENKINS_OPTS: "--httpListenAddress=127.0.0.1"
