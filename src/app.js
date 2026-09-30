@@ -74,7 +74,8 @@ function validarPedido(pedido) {
 function calcularTotal(itens) {
   const total = itens.reduce((soma, item) => {
     const peca = pecas.find((p) => p.codigo === item.codigo);
-    return soma + peca.preco * item.quantidade;
+    const desconto = item.quantidade >= 100 ? 0.95 : 1; // 5% para 100+ unidades
+    return soma + peca.preco * item.quantidade * desconto;
   }, 0);
   return Math.round(total * 100) / 100;
 }
