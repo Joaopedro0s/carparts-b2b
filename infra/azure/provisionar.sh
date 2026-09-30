@@ -56,14 +56,6 @@ criar_ambiente() {
     az containerapp env create --name "$ENV_NAME" --resource-group "$RG" --location "$LOC" \
       --logs-workspace-id "$LAW_ID" --logs-workspace-key "$LAW_KEY" --output none
 
-  # imagem inicial pública; o Jenkins substitui pela imagem do ACR no primeiro deploy
-  az containerapp show --name "$APP_NAME" --resource-group "$RG" --output none 2>/dev/null || \
-  az containerapp create --name "$APP_NAME" --resource-group "$RG" --environment "$ENV_NAME" \
-    --image mcr.microsoft.com/k8se/quickstart:latest \
-    --target-port 80 --ingress external \
-    --cpu 0.25 --memory 0.5Gi --min-replicas "$MIN" --max-replicas "$MAX" \
-    --output none
-
   # Pull do ACR com token de repositório SOMENTE LEITURA (escopo: carparts-api).
   # Ambientes "express" do Container Apps não aceitam identidade gerenciada no registro;
   # o token substitui o usuário admin do ACR, que continua desligado.
@@ -76,8 +68,21 @@ criar_ambiente() {
       --repository carparts-api content/read metadata/read --only-show-errors \
       --query "credentials.passwords[0].value" --output tsv)
   fi
-  az containerapp registry set -n "$APP_NAME" -g "$RG" --server "${ACR_NAME}.azurecr.io" \
-    --username "$TOKEN" --password "$SENHA" --only-show-errors --output none
+  sleep 30   # propagação da senha nova do token no ACR
+
+  # O app já nasce com a credencial do registro (no mesmo pedido). Imagem inicial pública;
+  # o Jenkins substitui pela imagem do ACR (por digest) no primeiro deploy.
+  if az containerapp show --name "$APP_NAME" --resource-group "$RG" --output none 2>/dev/null; then
+    az containerapp registry set -n "$APP_NAME" -g "$RG" --server "${ACR_NAME}.azurecr.io" \
+      --username "$TOKEN" --password "$SENHA" --only-show-errors --output none
+  else
+    az containerapp create --name "$APP_NAME" --resource-group "$RG" --environment "$ENV_NAME" \
+      --image mcr.microsoft.com/k8se/quickstart:latest \
+      --registry-server "${ACR_NAME}.azurecr.io" --registry-username "$TOKEN" --registry-password "$SENHA" \
+      --target-port 80 --ingress external \
+      --cpu 0.25 --memory 0.5Gi --min-replicas "$MIN" --max-replicas "$MAX" \
+      --only-show-errors --output none
+  fi
   unset SENHA
 }
 
@@ -105,11 +110,16 @@ unset SP_JSON
 echo "Credenciais do service principal gravadas em $DEST (arquivos 600, ignorados pelo Git)."
 
 echo ">> Orçamento de CI/CD: US\$ 150/mês"
-az consumption budget create --budget-name orcamento-cicd-carparts \
-  --amount 150 --category cost --time-grain monthly \
-  --start-date "$(date +%Y-%m-01)" --end-date "$(date -d '+1 year' +%Y-%m-01)" \
-  --output none || echo "Aviso: crie o orçamento pelo portal (Cost Management > Budgets)."
-echo "Configure no portal os alertas do orçamento em 50%, 80% e 100% (e-mail da equipe)."
+# API REST do Cost Management (o "az consumption budget create" é recusado em
+# algumas assinaturas, como a Azure for Students). Alertas em 50%, 80% e 100%.
+EMAIL_ALERTA="${EMAIL_ALERTA:-$(az account show --query user.name -o tsv)}"
+alerta() { printf '"a%s":{"enabled":true,"operator":"GreaterThan","threshold":%s,"contactEmails":["%s"],"thresholdType":"Actual"}' "$1" "$1" "$EMAIL_ALERTA"; }
+az rest --method put --only-show-errors --output none \
+  --url "https://management.azure.com/subscriptions/${SUB_ID}/providers/Microsoft.Consumption/budgets/orcamento-cicd-carparts?api-version=2023-05-01" \
+  --body "{\"properties\":{\"category\":\"Cost\",\"amount\":150,\"timeGrain\":\"Monthly\",
+    \"timePeriod\":{\"startDate\":\"$(date +%Y-%m-01)T00:00:00Z\",\"endDate\":\"$(date -d '+1 year' +%Y-%m-01)T00:00:00Z\"},
+    \"notifications\":{$(alerta 50),$(alerta 80),$(alerta 100)}}}" \
+  || echo "Aviso: crie o orçamento pelo portal (Cost Management > Budgets)."
 
 echo ">> Pronto. URLs:"
 az containerapp show -n ca-carparts-api-hml -g "$RG_HML" --query properties.configuration.ingress.fqdn -o tsv
