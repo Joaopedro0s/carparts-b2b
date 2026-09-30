@@ -45,6 +45,13 @@ describe('desconto por volume', () => {
   });
 });
 
+describe('limite de itens', () => {
+  test('pedido com 21 itens é rejeitado', () => {
+    const itens = Array.from({ length: 21 }, () => ({ codigo: 'CP-2040', quantidade: 1 }));
+    assert.ok(validarPedido({ cliente: 'X', itens }).includes('máximo de 30 itens por pedido'));
+  });
+});
+
 describe('API HTTP', () => {
   test('GET /health responde 200 com status ok', async () => {
     const r = await fetch(`${base}/health`);
