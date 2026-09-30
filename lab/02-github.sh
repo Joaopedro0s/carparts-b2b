@@ -6,7 +6,7 @@ REPO="$(env -u GITHUB_TOKEN gh repo view --json nameWithOwner -q .nameWithOwner)
 SMEE="$(curl -Ls -o /dev/null -w '%{url_effective}' https://smee.io/new)"
 echo "$SMEE" > "$HOME/.smee-url"
 pkill -f smee-client || true
-nohup npx -y smee-client --url "$SMEE" --target http://127.0.0.1:8080/github-webhook/ > "$HOME/smee.log" 2>&1 &
+nohup npx -y smee-client@1.2.5 --url "$SMEE" --target http://127.0.0.1:8080/github-webhook/ > "$HOME/smee.log" 2>&1 &
 
 python3 - "$SMEE" "$RAIZ/jenkins/controller/secrets/GITHUB_WEBHOOK_SECRET" <<'PY' \
   | env -u GITHUB_TOKEN gh api --method POST "repos/${REPO}/hooks" --input - --jq '{id: .id, eventos: .events, ativo: .active}'

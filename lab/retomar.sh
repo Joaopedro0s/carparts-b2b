@@ -24,6 +24,6 @@ nohup java -jar "$HOME/jenkins-agent/agent.jar" -url http://localhost:8080/ -nam
 # 4) Relay do webhook (se já configurado)
 if [ -s "$HOME/.smee-url" ]; then
   pkill -f smee-client || true
-  nohup npx -y smee-client --url "$(cat "$HOME/.smee-url")" --target http://127.0.0.1:8080/github-webhook/ > "$HOME/smee.log" 2>&1 &
+  nohup npx -y smee-client@1.2.5 --url "$(cat "$HOME/.smee-url")" --target http://127.0.0.1:8080/github-webhook/ > "$HOME/smee.log" 2>&1 &
 fi
 echo "Laboratório retomado."
