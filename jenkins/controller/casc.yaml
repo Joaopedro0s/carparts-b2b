@@ -12,9 +12,7 @@ jenkins:
   disableRememberMe: true
   markupFormatter: "plainText"
   slaveAgentPort: 50000                # agents inbound (TCP); exposta só na rede interna
-  crumbIssuer:
-    standard:
-      excludeClientIPFromCrumb: false
+  crumbIssuer: "standard"
 
   securityRealm:
     local:
