@@ -81,4 +81,10 @@ describe('API HTTP', () => {
     });
     assert.equal(r.status, 422);
   });
+
+  test('GET /api/pedidos lista os pedidos criados', async () => {
+    const r = await fetch(`${base}/api/pedidos`);
+    assert.equal(r.status, 200);
+    assert.ok(Array.isArray(await r.json()));
+  });
 });
