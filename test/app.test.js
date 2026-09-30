@@ -39,6 +39,12 @@ describe('regras de negócio', () => {
   });
 });
 
+describe('desconto por volume', () => {
+  test('100 unidades recebem 5% de desconto', () => {
+    assert.equal(calcularTotal([{ codigo: 'CP-2040', quantidade: 100 }]), 2327.5);
+  });
+});
+
 describe('API HTTP', () => {
   test('GET /health responde 200 com status ok', async () => {
     const r = await fetch(`${base}/health`);
