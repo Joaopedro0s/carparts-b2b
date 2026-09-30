@@ -3,8 +3,8 @@
 # por uma pessoa com permissão de Owner/User Access Administrator na assinatura,
 # no Azure Cloud Shell ou com a Azure CLI local).
 #
-# Recursos (região brazilsouth):
-#   rg-carparts-shared : ACR Basic (sem usuário admin) + Log Analytics (cota diária)
+# Recursos (região em LOC; padrão brazilsouth):
+#   rg-carparts-shared : ACR Basic (sem usuário admin)
 #   rg-carparts-hml    : ambiente Container Apps + ca-carparts-api-hml (escala a zero)
 #   rg-carparts-prd    : ambiente Container Apps + ca-carparts-api-prd (mín. 1 réplica)
 #   sp-jenkins-carparts: service principal com ESCOPO MÍNIMO
@@ -23,7 +23,7 @@ RG_PRD="rg-carparts-prd"
 TAGS="projeto=carparts-b2b dono=devops centro-custo=cicd"
 
 echo ">> Provedores de recursos (assinaturas novas precisam registrar)"
-for NS in Microsoft.ContainerRegistry Microsoft.App Microsoft.OperationalInsights; do
+for NS in Microsoft.ContainerRegistry Microsoft.App; do
   az provider register --namespace "$NS" --wait --output none
 done
 
@@ -33,24 +33,21 @@ for RG in "$RG_SHARED" "$RG_HML" "$RG_PRD"; do
 done
 
 echo ">> Azure Container Registry (Basic, sem admin user)"
-az acr create --resource-group "$RG_SHARED" --name "$ACR_NAME" --sku Basic \
-  --admin-enabled false --output none
+az acr show --name "$ACR_NAME" --output none 2>/dev/null || \
+  az acr create --resource-group "$RG_SHARED" --name "$ACR_NAME" --sku Basic \
+    --admin-enabled false --output none
 ACR_ID=$(az acr show --name "$ACR_NAME" --query id --output tsv)
-
-echo ">> Log Analytics com retenção de 30 dias e cota diária (controle de custo)"
-az monitor log-analytics workspace create --resource-group "$RG_SHARED" \
-  --workspace-name law-carparts --location "$LOC" --retention-time 30 \
-  --quota 0.2 --output none
-LAW_ID=$(az monitor log-analytics workspace show -g "$RG_SHARED" -n law-carparts --query customerId -o tsv)
-LAW_KEY=$(az monitor log-analytics workspace get-shared-keys -g "$RG_SHARED" -n law-carparts --query primarySharedKey -o tsv)
 
 criar_ambiente() {
   local RG="$1" ENV_NAME="$2" APP_NAME="$3" MIN="$4" MAX="$5"
   echo ">> Ambiente $ENV_NAME e app $APP_NAME"
-  az containerapp env create --name "$ENV_NAME" --resource-group "$RG" --location "$LOC" \
-    --logs-workspace-id "$LAW_ID" --logs-workspace-key "$LAW_KEY" --output none
+  # sem Log Analytics (custo): logs consultados com "az containerapp logs show"
+  az containerapp env show --name "$ENV_NAME" --resource-group "$RG" --output none 2>/dev/null || \
+    az containerapp env create --name "$ENV_NAME" --resource-group "$RG" --location "$LOC" \
+      --logs-destination none --output none
 
   # imagem inicial pública; o Jenkins substitui pela imagem do ACR no primeiro deploy
+  az containerapp show --name "$APP_NAME" --resource-group "$RG" --output none 2>/dev/null || \
   az containerapp create --name "$APP_NAME" --resource-group "$RG" --environment "$ENV_NAME" \
     --image mcr.microsoft.com/k8se/quickstart:latest \
     --target-port 80 --ingress external \
@@ -61,7 +58,8 @@ criar_ambiente() {
   local PRINCIPAL
   PRINCIPAL=$(az containerapp show -n "$APP_NAME" -g "$RG" --query identity.principalId -o tsv)
   az role assignment create --assignee-object-id "$PRINCIPAL" --assignee-principal-type ServicePrincipal \
-    --role AcrPull --scope "$ACR_ID" --output none
+    --role AcrPull --scope "$ACR_ID" --output none || true
+  sleep 30   # propagação da atribuição de papel antes de configurar o registro
   az containerapp registry set -n "$APP_NAME" -g "$RG" \
     --server "${ACR_NAME}.azurecr.io" --identity system --output none
 }
@@ -77,7 +75,7 @@ SP_JSON=$(az ad sp create-for-rbac --name sp-jenkins-carparts --role Contributor
   --years 1 --output json)
 SP_APP_ID=$(echo "$SP_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["appId"])')
 # AcrPush apenas no registro (push da imagem e leitura do digest)
-az role assignment create --assignee "$SP_APP_ID" --role AcrPush --scope "$ACR_ID" --output none
+az role assignment create --assignee "$SP_APP_ID" --role AcrPush --scope "$ACR_ID" --output none || true
 
 # Os valores sensíveis vão DIRETO para os arquivos de segredo do controller (fora do Git).
 DEST="${SECRETS_DIR:-../../jenkins/controller/secrets}"
