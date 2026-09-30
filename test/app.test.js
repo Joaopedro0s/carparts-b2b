@@ -58,6 +58,7 @@ describe('API HTTP', () => {
     assert.equal(r.status, 200);
     const corpo = await r.json();
     assert.equal(corpo.status, 'ok');
+    assert.equal(typeof corpo.uptime_s, 'number');
   });
 
   test('GET /api/pecas lista o catálogo', async () => {
