@@ -118,6 +118,10 @@ async function rotear(req, res) {
     return enviarJson(res, 201, novo);
   }
 
+  if (req.method === 'GET' && url.pathname === '/api/pedidos') {
+    return enviarJson(res, 200, pedidos);
+  }
+
   return enviarJson(res, 404, { erro: 'rota não encontrada' });
 }
 
