@@ -107,7 +107,12 @@ fi
 
 [ "$MERGE" = "1" ] || exit 0
 echo "Aguardando o check do Jenkins no PR..."
-sleep 20
+# espera o Jenkins publicar o status no PR (até ~5 min) e acompanha até o fim
+for _ in $(seq 1 30); do
+  $GH pr checks "$BR" >/dev/null 2>&1 && break
+  [ "$($GH pr checks "$BR" 2>&1 | grep -c 'no checks reported')" = "0" ] && break
+  sleep 10
+done
 $GH pr checks "$BR" --watch --interval 15 || { echo "Check vermelho: o merge está bloqueado pela proteção da main."; exit 1; }
 $GH pr merge "$BR" --squash --delete-branch
 git checkout main && git pull --ff-only
