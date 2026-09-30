@@ -54,6 +54,9 @@ function validarPedido(pedido) {
   if (!pedido.cliente || typeof pedido.cliente !== 'string') {
     erros.push('cliente é obrigatório');
   }
+  if (Array.isArray(pedido.itens) && pedido.itens.length > 20) {
+    erros.push('máximo de 20 itens por pedido');
+  }
   if (!Array.isArray(pedido.itens) || pedido.itens.length === 0) {
     erros.push('itens é obrigatório');
   } else {
