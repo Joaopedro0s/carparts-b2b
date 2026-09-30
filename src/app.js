@@ -87,7 +87,10 @@ async function rotear(req, res) {
   const url = new URL(req.url, 'http://localhost');
 
   if (req.method === 'GET' && url.pathname === '/health') {
-    return enviarJson(res, 200, { status: 'ok', versao: VERSION, commit: COMMIT, ambiente: AMBIENTE });
+    return enviarJson(res, 200, {
+      status: 'ok', versao: VERSION, commit: COMMIT, ambiente: AMBIENTE,
+      uptime_s: Math.round(process.uptime())
+    });
   }
 
   if (req.method === 'GET' && url.pathname === '/api/pecas') {
