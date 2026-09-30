@@ -1,0 +1,4 @@
+Built-In Node      executores=0 offline=False rotulos=['controller-nao-usar', 'built-in']
+ubuntu-agent-01    executores=2 offline=False rotulos=['ubuntu-agent-01', 'azure-cli', 'linux', 'docker']
+wsl-agent-01       executores=1 offline=True rotulos=['wsl', 'wsl-agent-01', 'linux', 'docker']
+wsl-agent-02       executores=1 offline=True rotulos=['wsl', 'wsl-agent-02', 'linux', 'docker']

@@ -1,0 +1,4 @@
+anônimo GET /api/json -> HTTP 403
+anônimo GET /job/carparts-api/ -> HTTP 403
+anônimo GET /manage/ -> HTTP 403
+anônimo GET /signup -> HTTP 404

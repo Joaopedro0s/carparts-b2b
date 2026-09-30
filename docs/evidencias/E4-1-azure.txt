@@ -1,0 +1,32 @@
+$ az role assignment list --assignee <appId do sp-jenkins-carparts> --all
+Papel        Escopo
+-----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------
+Contributor  /subscriptions/<assinatura>/resourceGroups/rg-carparts-hml
+Contributor  /subscriptions/<assinatura>/resourceGroups/rg-carparts-prd
+AcrPush      /subscriptions/<assinatura>/resourceGroups/rg-carparts-shared/providers/Microsoft.ContainerRegistry/registries/acrcarparts26179863
+
+$ az containerapp show (imagem em execução, por digest)
+ca-carparts-api-hml	acrcarparts26179863.azurecr.io/carparts-api@sha256:f367796264062a4f3e7e209f1e1eeed5a44592ab084cc797dbc75ad0e81a5fe1	pull-ca-carparts-api-hml	Running
+ca-carparts-api-prd	acrcarparts26179863.azurecr.io/carparts-api@sha256:f367796264062a4f3e7e209f1e1eeed5a44592ab084cc797dbc75ad0e81a5fe1	pull-ca-carparts-api-prd	Running
+
+$ az acr repository show-tags (últimas)
+12-ef8bfea
+11-1094183
+10-667ecde
+9-f39eff1
+8-b58d391
+7-b58d391
+6-5b63500
+5-76d8631
+
+$ orçamento
+{
+  "alertas": [
+    "a50",
+    "a80",
+    "a100"
+  ],
+  "nome": "orcamento-cicd-carparts",
+  "periodo": "Monthly",
+  "valor": 150.0
+}

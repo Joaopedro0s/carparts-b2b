@@ -1,0 +1,4 @@
+== hml: https://ca-carparts-api-hml.victorioussand-14a51dbd.northcentralus.azurecontainerapps.io/health
+{"status":"ok","versao":"12-ef8bfea","commit":"ef8bfeac0672ed8166cde48714e6991f91eaa6f2","ambiente":"hml","uptime_s":197}
+== prd: https://ca-carparts-api-prd.redbeach-8a367c74.northcentralus.azurecontainerapps.io/health
+{"status":"ok","versao":"12-ef8bfea","commit":"ef8bfeac0672ed8166cde48714e6991f91eaa6f2","ambiente":"prd","uptime_s":146}

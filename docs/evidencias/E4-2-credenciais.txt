@@ -1,0 +1,5 @@
+azure-sp                 Username with password       Service principal sp-jenkins-carparts (AcrPush no ACR; Contributor em rg-carparts-hml/prd)
+azure-tenant-id          Secret text                  Tenant do Microsoft Entra ID
+azure-subscription-id    Secret text                  Assinatura Azure da Carparts
+github-token             Username with password       Token fine-grained do GitHub (leitura do repositório + commit statuses)
+github-webhook-secret    Secret text                  Segredo HMAC do webhook do GitHub

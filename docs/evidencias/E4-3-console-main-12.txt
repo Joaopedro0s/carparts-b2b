@@ -1,0 +1,15 @@
+[2026-09-30T22:30:37.304Z] Lock acquired on [Resource: carparts-hml]
+[2026-09-30T22:30:38.384Z] Trying to pass milestone 1
+[2026-09-30T22:30:43.446Z] Imagem encontrada no ACR: acrcarparts26179863.azurecr.io/carparts-api@sha256:f367796264062a4f3e7e209f1e1eeed5a44592ab084cc797dbc75ad0e81a5fe1 (tag 12-ef8bfea)
+[2026-09-30T22:31:16.365Z] Deploy em hml concluído: https://ca-carparts-api-hml.victorioussand-14a51dbd.northcentralus.azurecontainerapps.io
+[2026-09-30T22:31:17.625Z] Smoke test em https://ca-carparts-api-hml.victorioussand-14a51dbd.northcentralus.azurecontainerapps.io
+[2026-09-30T22:31:17.625Z] OK /api/pecas (200). Smoke test aprovado.
+[2026-09-30T22:31:31.461Z] Trying to pass milestone 2
+[2026-09-30T22:31:31.567Z] Aprovação registrada: aprovador1 (build 12, imagem 12-ef8bfea)
+[2026-09-30T22:31:31.760Z] Lock acquired on [Resource: carparts-prd]
+[2026-09-30T22:31:32.829Z] Trying to pass milestone 3
+[2026-09-30T22:31:37.857Z] Imagem encontrada no ACR: acrcarparts26179863.azurecr.io/carparts-api@sha256:f367796264062a4f3e7e209f1e1eeed5a44592ab084cc797dbc75ad0e81a5fe1 (tag 12-ef8bfea)
+[2026-09-30T22:32:13.127Z] Deploy em prd concluído: https://ca-carparts-api-prd.redbeach-8a367c74.northcentralus.azurecontainerapps.io
+[2026-09-30T22:32:14.356Z] Smoke test em https://ca-carparts-api-prd.redbeach-8a367c74.northcentralus.azurecontainerapps.io
+[2026-09-30T22:32:14.356Z] OK /api/pecas (200). Smoke test aprovado.
+Finished: SUCCESS

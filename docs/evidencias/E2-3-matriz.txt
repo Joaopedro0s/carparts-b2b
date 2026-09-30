@@ -1,0 +1,11 @@
+Estratégia: GlobalMatrixAuthorizationStrategy
+Overall/Read                 [group:authenticated]
+Job/Read                     [group:authenticated]
+Job/Cancel                   [group:authenticated]
+Overall/Administer           [user:admin]
+Job/Workspace                [group:authenticated]
+Job/Build                    [group:authenticated]
+View/Read                    [group:authenticated]
+Run/Update                   [group:authenticated]
+Anonymous com alguma permissão: false
+Executores do nó interno: 0

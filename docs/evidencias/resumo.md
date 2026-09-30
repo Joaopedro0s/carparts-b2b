@@ -1,0 +1,12 @@
+| Métrica | Valor medido | Linha de base | Meta |
+|---|---|---|---|
+| Execuções analisadas | 19 (período de 1.0 dias) | builds manuais | mín. 10 |
+| Taxa de falha do pipeline (todas as branches) | 32% (6/19) | não medida | < 15% |
+| Taxa de falha na main | 42% | não medida | < 15% |
+| Execuções abortadas/sem aprovação | 0 | - | - |
+| Duração mediana de um build com sucesso | 2.1 min | - | < 15 min |
+| Deploys em produção | 7 | - | - |
+| Frequência de implantação | 49.0 por semana | ~1 a cada 11 dias | >= 3 por semana |
+| Lead time mediano (commit -> produção) | 0.1 h (0.00 dias) | 11 dias | <= 2 dias |
+| Lead time p90 | 0.1 h (0.01 dias) | 11 dias | <= 2 dias |
+| Redução do lead time vs. linha de base | 100% | - | >= 82% |

@@ -1,0 +1,6 @@
+6	MERGED	feature/health-uptime	feat: /health informa uptime
+5	MERGED	feature/limite-itens	feat: limita o pedido a 20 itens
+4	MERGED	feature/desconto-volume	feat: desconto de 5% para item com 100+ unidades
+3	MERGED	feature/buscar-pedido	feat: GET /api/pedidos/:id
+2	MERGED	fix/lab-webhook	lab: webhook via smee e espera do check
+1	MERGED	feature/listar-pedidos	feat: GET /api/pedidos lista os pedidos
