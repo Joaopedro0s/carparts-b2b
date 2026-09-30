@@ -69,15 +69,15 @@ criar_ambiente() {
   # o token substitui o usuário admin do ACR, que continua desligado.
   local TOKEN="pull-${APP_NAME}" SENHA
   if az acr token show --name "$TOKEN" --registry "$ACR_NAME" --output none 2>/dev/null; then
-    SENHA=$(az acr token credential generate --name "$TOKEN" --registry "$ACR_NAME" --password1 \
+    SENHA=$(az acr token credential generate --name "$TOKEN" --registry "$ACR_NAME" --password1 --only-show-errors \
       --query "passwords[0].value" --output tsv)
   else
     SENHA=$(az acr token create --name "$TOKEN" --registry "$ACR_NAME" \
-      --repository carparts-api content/read metadata/read \
+      --repository carparts-api content/read metadata/read --only-show-errors \
       --query "credentials.passwords[0].value" --output tsv)
   fi
   az containerapp registry set -n "$APP_NAME" -g "$RG" --server "${ACR_NAME}.azurecr.io" \
-    --username "$TOKEN" --password "$SENHA" --output none
+    --username "$TOKEN" --password "$SENHA" --only-show-errors --output none
   unset SENHA
 }
 
