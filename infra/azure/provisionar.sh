@@ -4,7 +4,7 @@
 # no Azure Cloud Shell ou com a Azure CLI local).
 #
 # Recursos (região em LOC; padrão brazilsouth):
-#   rg-carparts-shared : ACR Basic (sem usuário admin)
+#   rg-carparts-shared : ACR Basic (sem usuário admin) + Log Analytics (cota diária)
 #   rg-carparts-hml    : ambiente Container Apps + ca-carparts-api-hml (escala a zero)
 #   rg-carparts-prd    : ambiente Container Apps + ca-carparts-api-prd (mín. 1 réplica)
 #   sp-jenkins-carparts: service principal com ESCOPO MÍNIMO
@@ -23,7 +23,7 @@ RG_PRD="rg-carparts-prd"
 TAGS="projeto=carparts-b2b dono=devops centro-custo=cicd"
 
 echo ">> Provedores de recursos (assinaturas novas precisam registrar)"
-for NS in Microsoft.ContainerRegistry Microsoft.App; do
+for NS in Microsoft.ContainerRegistry Microsoft.App Microsoft.OperationalInsights; do
   az provider register --namespace "$NS" --wait --output none
 done
 
@@ -38,13 +38,23 @@ az acr show --name "$ACR_NAME" --output none 2>/dev/null || \
     --admin-enabled false --output none
 ACR_ID=$(az acr show --name "$ACR_NAME" --query id --output tsv)
 
+echo ">> Log Analytics com retenção de 30 dias e cota diária (controle de custo)"
+az monitor log-analytics workspace show -g "$RG_SHARED" -n law-carparts --output none 2>/dev/null || \
+  az monitor log-analytics workspace create --resource-group "$RG_SHARED" \
+    --workspace-name law-carparts --location "$LOC" --retention-time 30 \
+    --quota 0.2 --output none
+for _ in 1 2 3 4 5 6; do   # a criação é assíncrona: espera o recurso aparecer
+  LAW_ID=$(az monitor log-analytics workspace show -g "$RG_SHARED" -n law-carparts --query customerId -o tsv 2>/dev/null) && break
+  sleep 10
+done
+LAW_KEY=$(az monitor log-analytics workspace get-shared-keys -g "$RG_SHARED" -n law-carparts --query primarySharedKey -o tsv)
+
 criar_ambiente() {
   local RG="$1" ENV_NAME="$2" APP_NAME="$3" MIN="$4" MAX="$5"
   echo ">> Ambiente $ENV_NAME e app $APP_NAME"
-  # sem Log Analytics (custo): logs consultados com "az containerapp logs show"
   az containerapp env show --name "$ENV_NAME" --resource-group "$RG" --output none 2>/dev/null || \
     az containerapp env create --name "$ENV_NAME" --resource-group "$RG" --location "$LOC" \
-      --logs-destination none --output none
+      --logs-workspace-id "$LAW_ID" --logs-workspace-key "$LAW_KEY" --output none
 
   # imagem inicial pública; o Jenkins substitui pela imagem do ACR no primeiro deploy
   az containerapp show --name "$APP_NAME" --resource-group "$RG" --output none 2>/dev/null || \
