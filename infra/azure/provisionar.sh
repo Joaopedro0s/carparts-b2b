@@ -62,16 +62,23 @@ criar_ambiente() {
     --image mcr.microsoft.com/k8se/quickstart:latest \
     --target-port 80 --ingress external \
     --cpu 0.25 --memory 0.5Gi --min-replicas "$MIN" --max-replicas "$MAX" \
-    --system-assigned --output none
+    --output none
 
-  # o app puxa do ACR com identidade gerenciada (AcrPull), sem senha
-  local PRINCIPAL
-  PRINCIPAL=$(az containerapp show -n "$APP_NAME" -g "$RG" --query identity.principalId -o tsv)
-  az role assignment create --assignee-object-id "$PRINCIPAL" --assignee-principal-type ServicePrincipal \
-    --role AcrPull --scope "$ACR_ID" --output none || true
-  sleep 30   # propagação da atribuição de papel antes de configurar o registro
-  az containerapp registry set -n "$APP_NAME" -g "$RG" \
-    --server "${ACR_NAME}.azurecr.io" --identity system --output none
+  # Pull do ACR com token de repositório SOMENTE LEITURA (escopo: carparts-api).
+  # Ambientes "express" do Container Apps não aceitam identidade gerenciada no registro;
+  # o token substitui o usuário admin do ACR, que continua desligado.
+  local TOKEN="pull-${APP_NAME}" SENHA
+  if az acr token show --name "$TOKEN" --registry "$ACR_NAME" --output none 2>/dev/null; then
+    SENHA=$(az acr token credential generate --name "$TOKEN" --registry "$ACR_NAME" --password1 \
+      --query "passwords[0].value" --output tsv)
+  else
+    SENHA=$(az acr token create --name "$TOKEN" --registry "$ACR_NAME" \
+      --repository carparts-api content/read metadata/read \
+      --query "credentials.passwords[0].value" --output tsv)
+  fi
+  az containerapp registry set -n "$APP_NAME" -g "$RG" --server "${ACR_NAME}.azurecr.io" \
+    --username "$TOKEN" --password "$SENHA" --output none
+  unset SENHA
 }
 
 criar_ambiente "$RG_HML" cae-carparts-hml ca-carparts-api-hml 0 1
